@@ -45,7 +45,7 @@ guide depending on the development workstation you are using.
 Once Docker Desktop has been installed, open up a command prompt and type in the following Docker commands to validate Docker
 is working correctly on your computer.
 
-``` shell
+``` text
 docker run hello-world
 ```
 
@@ -74,7 +74,11 @@ For more examples and ideas, visit:
  https://docs.docker.com/get-started/
 ```
 
-At this point, we can move on to Postgres.
+If this is failing for you, revisit the Docker Desktop install documentation to resolve any potential problems, and reach out to the instructors if there are no immediate
+fixes.
+
+
+Once everything is running, we can move on to Postgres.
 
 ## Running PostgreSQL as a container
 
@@ -83,19 +87,56 @@ very rapidly for testing and local development purposes. In this case, we will b
 
 Run the following command from a terminal.
 
-``` shell
-docker run --name postgres-lab -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=db_test -p 5432:5432 -d ubuntu/postgres:14-22.04_beta
+``` text
+docker network create lab-network
+docker run --name postgres-lab --network labnetwork -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=db_test -p 5432:5432 -d ubuntu/postgres:14-22.04_beta
 ```
 
-And after this instance starts, you can remote into the container to run cli commands manually.
+For some necessary Docker commands at this stage.
+We can check the status of these containers with `docker ps -a`
+We can stop a container with `docker stop ...`
+We can start a container with `docker start ...`
+Everything else should be explicitly mentioned in the labs as needed.
 
+``` text
+docker ps -a
+```
 ``` shell
+CONTAINER ID   IMAGE                                           COMMAND                  CREATED             STATUS                         PORTS                                       NAMES
+9d7a283e5eb0   ubuntu/postgres:14-22.04_beta                   "docker-entrypoint.s…"   6 seconds ago       Up 4 seconds                0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   postgres-lab
+...
+```
+``` text
+docker stop postgres-lab
+docker ps -a
+```
+``` shell
+CONTAINER ID   IMAGE                                           COMMAND                  CREATED              STATUS                          PORTS                                       NAMES
+9d7a283e5eb0   ubuntu/postgres:14-22.04_beta                   "docker-entrypoint.s…"   About a minute ago   Exited (0) 4 seconds ago                                                    postgres-lab
+```
+``` text
+docker start postgres-lab
+docker ps -a
+```
+``` shell
+CONTAINER ID   IMAGE                                           COMMAND                  CREATED              STATUS                     PORTS                                       NAMES
+9d7a283e5eb0   ubuntu/postgres:14-22.04_beta                   "docker-entrypoint.s…"   About a minute ago   Up 2 seconds               0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   postgres-lab
+```
+
+Once we've checked it has started, and is running, you can remote into the container to run cli commands manually.
+
+``` text
 docker exec -it postgres-lab /bin/bash
 root@9d7a283e5eb0:/# psql -U postgres
+```
+``` shell
 psql (14.4 (Ubuntu 14.4-0ubuntu0.22.04.1))
 Type "help" for help.
-
+```
+``` text
 postgres=# \l
+```
+``` shell
                                  List of databases
    Name    |  Owner   | Encoding |  Collate   |   Ctype    |   Access privileges   
 -----------+----------+----------+------------+------------+-----------------------
@@ -136,11 +177,12 @@ commands.
 > Note: This is a fairly hacky solution to get infrastructure testing installed onto uncontrolled classroom workstations. If this
 > fails to run for any reason, loop in the instructors first before taking on any debugging on your part. 
 
-``` shell
+``` text
 docker build -t inspec-lab -f Dockerfile.Inspec .
-docker run -it --rm -v $(pwd)/test:/test inspec-lab
-docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/test:/test inspec-lab exec postgres.rb -t docker://postgres-lab 
-
+docker run --network labnetwork -it --rm -v $(pwd)/test:/test inspec-lab
+docker run --network labnetwork -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/test:/test inspec-lab exec postgres.rb -t docker://postgres-lab 
+```
+``` shell
 Profile:   tests from postgres.rb (tests from postgres.rb)
 Version:   (not specified)
 Target:    docker://9d7a283e5eb093e479925532e698b2da80b727598772397aa6650a531cc171f9
@@ -162,16 +204,19 @@ Test Summary: 4 successful, 0 failures, 0 skipped
 
 Try deleting the database now, to see that the tests start failing.
 
-``` shell
+``` text
 docker exec -it postgres-lab /bin/bash
 root@9d7a283e5eb0:/# psql -U postgres 
 postgres=# DROP DATABASE db_test WITH (FORCE);
+```
+``` shell
 DROP DATABASE
 ```
 
+``` text
+docker run --network labnetwork -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/test:/test inspec-lab exec postgres.rb -t docker://postgres-lab 
+```
 ``` shell
-docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/test:/test inspec-lab exec postgres.rb -t docker://postgres-lab 
-
 Profile:   tests from postgres.rb (tests from postgres.rb)
 Version:   (not specified)
 Target:    docker://9d7a283e5eb093e479925532e698b2da80b727598772397aa6650a531cc171f9
@@ -199,5 +244,4 @@ Profile Summary: 3 successful controls, 1 control failure, 0 controls skipped
 Test Summary: 3 successful, 1 failure, 0 skipped
 ```
 
-Now destroy and recreate the Postgres container, and verify it passes the tests once more.
-Rebuilding off of a known working state will allow for very rapid iteration, removing the need for any long lived setups that may accumulate configuration drift.
+Now destroy and recreate the Postgres container, and verify it passes the tests once more. Once it is, upload a screenshot of the successful tests as a submission.
