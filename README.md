@@ -88,7 +88,7 @@ very rapidly for testing and local development purposes. In this case, we will b
 Run the following command from a terminal.
 
 ``` text
-docker network create lab-network
+docker network create labnetwork
 docker run --name postgres-lab --network labnetwork -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=db_test -p 5432:5432 -d ubuntu/postgres:14-22.04_beta
 ```
 
@@ -179,6 +179,15 @@ commands.
 
 ``` text
 docker build -t inspec-lab -f Dockerfile.Inspec .
+```
+``` text
+# Windows
+docker run --network labnetwork -it --rm -v $pwd/test:/test inspec-lab
+docker run --network labnetwork -it --rm -v //var/run/docker.sock:/var/run/docker.sock -v $pwd/test:/test inspec-lab exec postgres.rb -t docker://postgres-lab 
+```
+``` text
+# Mac/Linux
+# Note: This syntax is used in all the lessons
 docker run --network labnetwork -it --rm -v $(pwd)/test:/test inspec-lab
 docker run --network labnetwork -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/test:/test inspec-lab exec postgres.rb -t docker://postgres-lab 
 ```
@@ -245,3 +254,8 @@ Test Summary: 3 successful, 1 failure, 0 skipped
 ```
 
 Now destroy and recreate the Postgres container, and verify it passes the tests once more. Once it is, upload a screenshot of the successful tests as a submission.
+
+``` text
+docker rm -f postgres-lab
+docker run ...
+```
